@@ -1,0 +1,878 @@
+// DevOps CRM - Database Schema
+// A multi-entity relationship management system for residential real estate developers
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USERS & AUTH
+// ============================================================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  passwordHash  String
+  phone         String?
+  role          Role     @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  activities    Activity[]
+  assignedTasks Activity[] @relation("AssignedTasks")
+  uploadedDocuments Document[]
+  investorMessages InvestorMessage[]
+  documentTemplates DocumentTemplate[]
+}
+
+enum Role {
+  ADMIN
+  USER
+  VIEWER
+}
+
+// ============================================================================
+// INVESTORS
+// ============================================================================
+
+model Investor {
+  id                 String   @id @default(cuid())
+  
+  // Contact Info
+  firstName          String
+  lastName           String
+  email              String   @unique
+  phone              String?
+  company            String?
+  
+  // Investor Profile
+  accreditedStatus   AccreditedStatus @default(UNKNOWN)
+  investmentCapacity String?
+  preferredStructure String?
+  
+  // Pipeline Status
+  status             InvestorStatus @default(LEAD)
+  source             String?
+  
+  // Commitment
+  committedAmount    Float?
+  committedDate      DateTime?
+  
+  // Relationships
+  investments        Investment[]
+  activities         Activity[]
+  
+  // Portal features
+  auth               InvestorAuth?
+  documents          Document[]
+  notifications      Notification[]
+  messages           InvestorMessage[]
+  
+  // Meta
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+enum AccreditedStatus {
+  VERIFIED
+  SELF_REPORTED
+  UNKNOWN
+  NOT_ACCREDITED
+}
+
+enum InvestorStatus {
+  LEAD
+  CONTACTED
+  MEETING_SCHEDULED
+  REVIEWING_DOCS
+  NEGOTIATING
+  COMMITTED
+  FUNDED
+  DECLINED
+  INACTIVE
+}
+
+// ============================================================================
+// PROJECTS
+// ============================================================================
+
+model Project {
+  id              String   @id @default(cuid())
+  
+  // Basic Info
+  name            String
+  address         String?
+  city            String?
+  state           String   @default("OR")
+  zip             String?
+  
+  // Financials
+  landCost        Float?
+  buildBudget     Float?
+  targetSalePrice Float?
+  actualSalePrice Float?
+  
+  // Timeline
+  status          ProjectStatus @default(PLANNING)
+  startDate       DateTime?
+  targetEndDate   DateTime?
+  actualEndDate   DateTime?
+  
+  // Relationships
+  investments     Investment[]
+  landLeads       LandLead[]
+  bids            Bid[]
+  buyers          Buyer[]
+  showings        Showing[]
+  activities      Activity[]
+  documents       Document[]
+  vendors         ProjectVendor[]
+  
+  // Meta
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum ProjectStatus {
+  PLANNING
+  FUNDED
+  LAND_SEARCH
+  LAND_ACQUIRED
+  PERMITTING
+  CONSTRUCTION
+  COMPLETED
+  LISTED
+  UNDER_CONTRACT
+  SOLD
+  CANCELLED
+}
+
+// ============================================================================
+// INVESTMENTS (Junction: Investor <-> Project)
+// ============================================================================
+
+model Investment {
+  id              String   @id @default(cuid())
+  
+  investorId      String
+  investor        Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Terms
+  amount          Float
+  type            InvestmentType
+  interestRate    Float?
+  equityPercent   Float?
+  terms           String?
+  
+  // Timeline
+  fundedDate      DateTime?
+  maturityDate    DateTime?
+  
+  // Tracking
+  status          InvestmentStatus @default(PENDING)
+  
+  // Distributions
+  distributions   Distribution[]
+  
+  // Documents
+  investmentDocuments Document[]
+  
+  // Meta
+  documentsJson   String?   // Legacy field for JSON document URLs
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([investorId, projectId])
+}
+
+enum InvestmentType {
+  EQUITY
+  PREFERRED_EQUITY
+  DEBT
+  CONVERTIBLE
+}
+
+enum InvestmentStatus {
+  PENDING
+  FUNDED
+  ACTIVE
+  DISTRIBUTING
+  CLOSED
+  DEFAULTED
+}
+
+model Distribution {
+  id              String   @id @default(cuid())
+  
+  investmentId    String
+  investment      Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  
+  amount          Float
+  type            DistributionType
+  date            DateTime
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+}
+
+enum DistributionType {
+  RETURN_OF_CAPITAL
+  PROFIT_DISTRIBUTION
+  INTEREST_PAYMENT
+  FINAL_DISTRIBUTION
+}
+
+// ============================================================================
+// LAND LEADS
+// ============================================================================
+
+model LandLead {
+  id              String   @id @default(cuid())
+  
+  // Location
+  address         String
+  city            String?
+  state           String   @default("OR")
+  zip             String?
+  parcelId        String?
+  
+  // Property Details
+  acreage         Float?
+  zoning          String?
+  utilities       String?
+  topography      String?
+  
+  // Owner Info
+  ownerName       String?
+  ownerPhone      String?
+  ownerEmail      String?
+  ownerAddress    String?
+  
+  // Deal Info
+  askingPrice     Float?
+  estimatedValue  Float?
+  pricePerAcre    Float?
+  
+  // Status
+  status          LandLeadStatus @default(NEW)
+  source          String?
+  
+  // Assignment
+  projectId       String?
+  project         Project? @relation(fields: [projectId], references: [id])
+  
+  // Relationships
+  activities      Activity[]
+  
+  // Meta
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum LandLeadStatus {
+  NEW
+  RESEARCHING
+  CONTACTED
+  NEGOTIATING
+  UNDER_CONTRACT
+  DUE_DILIGENCE
+  CLOSED
+  PASSED
+  LOST
+}
+
+// ============================================================================
+// SUBCONTRACTORS
+// ============================================================================
+
+model Subcontractor {
+  id              String   @id @default(cuid())
+  
+  // Company Info
+  companyName     String
+  contactName     String
+  trade           Trade
+  
+  // Contact
+  email           String?
+  phone           String
+  address         String?
+  city            String?
+  state           String   @default("OR")
+  
+  // Licensing & Insurance
+  licenseNumber   String?
+  licenseExpiry   DateTime?
+  insuranceExpiry DateTime?
+  coiDocumentUrl  String?
+  bondAmount      Float?
+  
+  // Rates
+  hourlyRate      Float?
+  dayRate         Float?
+  preferredPayment String?
+  
+  // Performance
+  status          SubcontractorStatus @default(ACTIVE)
+  rating          Int?
+  reliabilityScore Int?
+  
+  // Relationships
+  bids            Bid[]
+  activities      Activity[]
+  
+  // Meta
+  notes           String?
+  tags            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum Trade {
+  GENERAL
+  CONCRETE
+  FRAMING
+  ELECTRICAL
+  PLUMBING
+  HVAC
+  INSULATION
+  ROOFING
+  SIDING
+  DRYWALL
+  PAINTING
+  FLOORING
+  TILE
+  CABINETS
+  COUNTERTOPS
+  LANDSCAPING
+  EXCAVATION
+  GRADING
+  SURVEYING
+  ENGINEERING
+  ARCHITECTURE
+  OTHER
+}
+
+enum SubcontractorStatus {
+  ACTIVE
+  PREFERRED
+  PROBATION
+  INACTIVE
+  BLACKLISTED
+}
+
+// ============================================================================
+// BIDS
+// ============================================================================
+
+model Bid {
+  id              String   @id @default(cuid())
+  
+  // Relationships
+  subcontractorId String
+  subcontractor   Subcontractor @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+  
+  projectId       String
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Bid Details
+  scope           String
+  amount          Float
+  breakdown       String?
+  
+  // Timeline
+  submittedAt     DateTime @default(now())
+  validUntil      DateTime?
+  
+  // Status
+  status          BidStatus @default(RECEIVED)
+  
+  // Documents
+  documents       String?
+  
+  // Meta
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum BidStatus {
+  REQUESTED
+  RECEIVED
+  UNDER_REVIEW
+  SHORTLISTED
+  AWARDED
+  REJECTED
+  WITHDRAWN
+}
+
+// ============================================================================
+// BUYERS
+// ============================================================================
+
+model Buyer {
+  id              String   @id @default(cuid())
+  
+  // Contact Info
+  firstName       String
+  lastName        String
+  email           String
+  phone           String?
+  
+  // Qualification
+  preApproved     Boolean  @default(false)
+  preApprovalAmount Float?
+  lenderName      String?
+  priceRangeMin   Float?
+  priceRangeMax   Float?
+  
+  // Preferences
+  bedroomsMin     Int?
+  bathroomsMin    Float?
+  sqftMin         Int?
+  mustHaves       String?
+  
+  // Status
+  status          BuyerStatus @default(LEAD)
+  source          String?
+  
+  // Assignment
+  interestedProjectId String?
+  interestedProject   Project? @relation(fields: [interestedProjectId], references: [id])
+  
+  // Relationships
+  showings        Showing[]
+  activities      Activity[]
+  
+  // Meta
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum BuyerStatus {
+  LEAD
+  CONTACTED
+  QUALIFIED
+  SHOWING
+  OFFER_MADE
+  UNDER_CONTRACT
+  CLOSED
+  LOST
+  INACTIVE
+}
+
+// ============================================================================
+// SHOWINGS
+// ============================================================================
+
+model Showing {
+  id              String   @id @default(cuid())
+  
+  buyerId         String
+  buyer           Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Scheduling
+  dateTime        DateTime
+  duration        Int      @default(30)
+  
+  // Outcome
+  status          ShowingStatus @default(SCHEDULED)
+  interestLevel   Int?
+  feedback        String?
+  
+  // Meta
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum ShowingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ============================================================================
+// VENDORS (Suppliers, Services)
+// ============================================================================
+
+model Vendor {
+  id              String   @id @default(cuid())
+  
+  // Company Info
+  companyName     String
+  contactName     String?
+  category        VendorCategory
+  
+  // Contact
+  email           String?
+  phone           String?
+  website         String?
+  address         String?
+  city            String?
+  state           String   @default("OR")
+  zip             String?
+  
+  // Account & Credit
+  accountNumber   String?
+  creditLimit     Float?
+  currentBalance  Float?
+  paymentTerms    String?
+  taxExempt       Boolean  @default(false)
+  taxId           String?
+  
+  // Portal/Login Info
+  portalUrl       String?  // Vendor portal login URL
+  portalUsername  String?  // Username for quick reference
+  
+  // Status
+  status          VendorStatus @default(ACTIVE)
+  
+  // Relationships
+  activities      Activity[]
+  projects        ProjectVendor[]
+  
+  // Meta
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Project-Vendor Junction Table
+model ProjectVendor {
+  id         String   @id @default(cuid())
+  
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  vendorId   String
+  vendor     Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  role       String?  // What role/service they provide for this project
+  createdAt  DateTime @default(now())
+  
+  @@unique([projectId, vendorId])
+}
+
+enum VendorCategory {
+  LUMBER
+  CONCRETE_SUPPLY
+  ELECTRICAL_SUPPLY
+  PLUMBING_SUPPLY
+  HVAC_SUPPLY
+  ROOFING_SUPPLY
+  WINDOWS_DOORS
+  APPLIANCES
+  FIXTURES
+  HARDWARE
+  EQUIPMENT_RENTAL
+  WASTE_DISPOSAL
+  INSURANCE
+  LEGAL
+  ACCOUNTING
+  MARKETING
+  TITLE_ESCROW
+  REAL_ESTATE_AGENT
+  OTHER
+}
+
+enum VendorStatus {
+  ACTIVE
+  PREFERRED
+  INACTIVE
+}
+
+// ============================================================================
+// ACTIVITIES (Universal Activity Log)
+// ============================================================================
+
+model Activity {
+  id              String   @id @default(cuid())
+  
+  // What entity is this activity for?
+  entityType      EntityType
+  entityId        String
+  
+  // Activity Details
+  type            ActivityType
+  subject         String
+  description     String?
+  
+  // Scheduling (for tasks)
+  dueDate         DateTime?
+  completed       Boolean  @default(false)
+  completedAt     DateTime?
+  
+  // Assignment
+  createdById     String
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  
+  assignedToId    String?
+  assignedTo      User?    @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  
+  // Optional relationships (for querying)
+  investorId      String?
+  investor        Investor? @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  projectId       String?
+  project         Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  landLeadId      String?
+  landLead        LandLead? @relation(fields: [landLeadId], references: [id], onDelete: Cascade)
+  
+  subcontractorId String?
+  subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+  
+  buyerId         String?
+  buyer           Buyer? @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  
+  vendorId        String?
+  vendor          Vendor? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  // Meta
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum EntityType {
+  INVESTOR
+  PROJECT
+  LAND_LEAD
+  SUBCONTRACTOR
+  BUYER
+  VENDOR
+}
+
+enum ActivityType {
+  NOTE
+  CALL
+  EMAIL
+  MEETING
+  TASK
+  STATUS_CHANGE
+  DOCUMENT
+  SITE_VISIT
+}
+// ============================================================================
+// INVESTOR PORTAL AUTH
+// ============================================================================
+
+model InvestorAuth {
+  id              String   @id @default(cuid())
+  
+  investorId      String   @unique
+  investor        Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  // Auth credentials
+  passwordHash    String
+  lastLogin       DateTime?
+  loginCount      Int      @default(0)
+  
+  // Password reset
+  resetToken      String?
+  resetTokenExpiry DateTime?
+  
+  // Email verification
+  emailVerified   Boolean  @default(false)
+  verifyToken     String?
+  
+  // Security
+  failedAttempts  Int      @default(0)
+  lockedUntil     DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ============================================================================
+// DOCUMENTS
+// ============================================================================
+
+model Document {
+  id              String   @id @default(cuid())
+  
+  // File info
+  name            String
+  originalName    String
+  mimeType        String
+  size            Int              // bytes
+  path            String           // file path or S3 key
+  
+  // Categorization
+  category        DocumentCategory
+  isPublic        Boolean  @default(false)
+  
+  // Associations (can be attached to multiple entity types)
+  investorId      String?
+  investor        Investor? @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  projectId       String?
+  project         Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  investmentId    String?
+  investment      Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  
+  // Upload info
+  uploadedById    String?
+  uploadedBy      User?    @relation(fields: [uploadedById], references: [id])
+  
+  // Meta
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum DocumentCategory {
+  INVESTOR_PACKET
+  SUBSCRIPTION_AGREEMENT
+  TAX_DOCUMENT
+  K1_FORM
+  DISTRIBUTION_NOTICE
+  PROJECT_UPDATE
+  LEGAL_DOCUMENT
+  INSURANCE
+  PERMIT
+  PHOTO
+  OTHER
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model Notification {
+  id              String   @id @default(cuid())
+  
+  // Target
+  investorId      String
+  investor        Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  // Content
+  type            NotificationType
+  title           String
+  message         String
+  link            String?          // Optional link to view more
+  
+  // Status
+  read            Boolean  @default(false)
+  readAt          DateTime?
+  
+  // Related entities
+  projectId       String?
+  investmentId    String?
+  documentId      String?
+  
+  createdAt       DateTime @default(now())
+}
+
+enum NotificationType {
+  WELCOME
+  PROJECT_UPDATE
+  DISTRIBUTION_PENDING
+  DISTRIBUTION_SENT
+  DOCUMENT_AVAILABLE
+  TAX_DOCUMENT_READY
+  INVESTMENT_STATUS
+  GENERAL
+}
+
+// ============================================================================
+// INVESTOR MESSAGES
+// ============================================================================
+
+model InvestorMessage {
+  id              String   @id @default(cuid())
+  
+  investorId      String
+  investor        Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  // Message content
+  subject         String
+  message         String
+  
+  // Direction
+  direction       MessageDirection
+  
+  // Staff response
+  respondedById   String?
+  respondedBy     User?    @relation(fields: [respondedById], references: [id])
+  respondedAt     DateTime?
+  response        String?
+  
+  // Status
+  status          MessageStatus @default(PENDING)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum MessageDirection {
+  INVESTOR_TO_ADMIN
+  ADMIN_TO_INVESTOR
+}
+
+enum MessageStatus {
+  PENDING
+  READ
+  RESPONDED
+  CLOSED
+}
+
+// ============================================================================
+// DOCUMENT TEMPLATES
+// ============================================================================
+
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  
+  name        String
+  description String?
+  category    TemplateCategory
+  
+  // Template content (HTML/rich text)
+  content     String
+  
+  // Variable placeholders used in template
+  // Stored as JSON array: ["{{investor_name}}", "{{company_name}}", etc.]
+  variables   String?
+  
+  // Metadata
+  isActive    Boolean  @default(true)
+  version     Int      @default(1)
+  
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum TemplateCategory {
+  INVESTOR_PACKET
+  SUBSCRIPTION_AGREEMENT
+  OPERATING_AGREEMENT
+  PPM
+  WELCOME_LETTER
+  TAX_DOCUMENT
+  DISTRIBUTION_NOTICE
+  PROJECT_UPDATE
+  GENERAL
+}

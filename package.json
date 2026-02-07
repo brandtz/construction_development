@@ -1,0 +1,24 @@
+{
+  "name": "lane-county-housing-monorepo",
+  "version": "1.0.0",
+  "description": "Lane County Housing Development - Full Stack Platform",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n api,crm,portal,site -c blue,green,yellow,magenta \"npm run dev:api\" \"npm run dev:crm\" \"npm run dev:portal\" \"npm run dev:site\"",
+    "dev:api": "node devops-crm/server/index.js",
+    "dev:crm": "npm --prefix devops-crm/client run dev",
+    "dev:portal": "npm --prefix investor-portal run dev",
+    "dev:site": "npm --prefix consturction_development run dev",
+    "install:all": "npm install && npm --prefix devops-crm install && npm --prefix devops-crm/client install && npm --prefix investor-portal install && npm --prefix consturction_development install",
+    "build": "npm run build:site && npm run build:crm && npm run build:portal",
+    "build:site": "npm --prefix consturction_development run build",
+    "build:crm": "npm --prefix devops-crm/client run build",
+    "build:portal": "npm --prefix investor-portal run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

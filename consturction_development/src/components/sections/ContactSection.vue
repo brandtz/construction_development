@@ -163,6 +163,11 @@
               </span>
             </button>
             
+            <!-- Error Message -->
+            <div v-if="errorMessage" class="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p class="text-red-700 text-sm">{{ errorMessage }}</p>
+            </div>
+            
             <p class="text-xs text-charcoal-400 text-center">
               By submitting, you agree to receive investment-related communications. 
               We respect your privacy and will never share your information.
@@ -253,6 +258,8 @@ import {
 } from '@heroicons/vue/24/outline'
 import { siteContent as content } from '@/data/content.js'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+
 const form = ref({
   firstName: '',
   lastName: '',
@@ -265,23 +272,45 @@ const form = ref({
 
 const isSubmitting = ref(false)
 const submitted = ref(false)
+const errorMessage = ref('')
 
 const handleSubmit = async () => {
   isSubmitting.value = true
+  errorMessage.value = ''
   
   try {
-    // Netlify Forms submission
-    const formData = new FormData()
-    formData.append('form-name', 'investor-inquiry')
-    Object.entries(form.value).forEach(([key, value]) => {
-      formData.append(key, value)
+    // Map form data to CRM API format
+    const investmentCapacityMap = {
+      '25k-50k': '$25K-$50K',
+      '50k-100k': '$50K-$100K',
+      '100k-250k': '$100K-$250K',
+      '250k+': '$250K+',
+      'undecided': 'Not specified'
+    }
+    
+    const payload = {
+      firstName: form.value.firstName,
+      lastName: form.value.lastName,
+      email: form.value.email,
+      phone: form.value.phone || null,
+      investmentCapacity: investmentCapacityMap[form.value.investmentRange] || null,
+      accreditedStatus: form.value.accredited ? 'INDIVIDUAL' : 'UNKNOWN',
+      source: 'WEBSITE',
+      notes: form.value.message || null
+    }
+    
+    // Submit to CRM API
+    const response = await fetch(`${API_URL}/investor/interest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     })
     
-    await fetch('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(formData).toString(),
-    })
+    const data = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to submit')
+    }
     
     submitted.value = true
     
@@ -297,7 +326,7 @@ const handleSubmit = async () => {
     }
   } catch (error) {
     console.error('Form submission error:', error)
-    alert('There was an error submitting the form. Please try again.')
+    errorMessage.value = error.message || 'There was an error submitting the form. Please try again.'
   } finally {
     isSubmitting.value = false
   }

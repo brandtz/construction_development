@@ -2,6 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Modern Button Styles */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-7 py-3 rounded-full font-medium transition-all duration-200;
+    @apply hover:shadow-lg active:scale-[0.98];
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-7 py-3 rounded-full font-medium transition-all duration-200;
+    @apply bg-forest-600 text-white shadow-md;
+    @apply hover:bg-forest-700 hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-forest-800;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-forest-400;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-7 py-3 rounded-full font-medium transition-all duration-200;
+    @apply bg-white/90 backdrop-blur-sm text-gray-800 border border-gray-200 shadow-sm;
+    @apply hover:bg-white hover:border-gray-300 hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-gray-50;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300;
+  }
+  
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-7 py-3 rounded-full font-medium transition-all duration-200;
+    @apply bg-transparent text-forest-600 border-2 border-forest-500;
+    @apply hover:bg-forest-50 hover:border-forest-600 hover:text-forest-700 hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-forest-100;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-forest-400;
+  }
+  
+  .btn-outline-white {
+    @apply inline-flex items-center justify-center px-7 py-3 rounded-full font-medium transition-all duration-200;
+    @apply bg-transparent text-white border-2 border-white/80;
+    @apply hover:bg-white/10 hover:border-white hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-white/20;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50;
+  }
+  
+  .btn-accent {
+    @apply inline-flex items-center justify-center px-7 py-3 rounded-full font-medium transition-all duration-200;
+    @apply bg-amber-500 text-white shadow-md;
+    @apply hover:bg-amber-600 hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-amber-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400;
+  }
+  
+  .btn-sm {
+    @apply px-5 py-2 text-sm;
+  }
+  
+  .btn-lg {
+    @apply px-9 py-4 text-lg;
+  }
+  
+  .btn:disabled,
+  .btn-primary:disabled,
+  .btn-secondary:disabled,
+  .btn-accent:disabled {
+    @apply opacity-50 cursor-not-allowed scale-100 shadow-none;
+  }
+}
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;

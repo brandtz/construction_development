@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+  
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-200 inline-flex items-center justify-center gap-2;
+    @apply hover:shadow-lg active:scale-[0.98];
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-200 inline-flex items-center justify-center gap-2;
+    @apply bg-forest-500 text-white shadow-md;
+    @apply hover:bg-forest-600 hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-forest-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-forest-400;
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-200 inline-flex items-center justify-center gap-2;
+    @apply bg-white text-charcoal-600 border border-sand-300 shadow-sm;
+    @apply hover:bg-sand-50 hover:border-sand-400 hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-sand-100;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sand-300;
+  }
+  
+  .btn-accent {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-200 inline-flex items-center justify-center gap-2;
+    @apply bg-terracotta-500 text-white shadow-md;
+    @apply hover:bg-terracotta-600 hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-terracotta-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-terracotta-400;
+  }
+  
+  .btn-outline {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-200 inline-flex items-center justify-center gap-2;
+    @apply bg-transparent text-forest-600 border-2 border-forest-500;
+    @apply hover:bg-forest-50 hover:border-forest-600 hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-forest-100;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-forest-400;
+  }
+  
+  .btn-ghost {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-200 inline-flex items-center justify-center gap-2;
+    @apply bg-transparent text-charcoal-600;
+    @apply hover:bg-sand-100 active:scale-[0.98];
+    @apply active:bg-sand-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sand-300;
+  }
+  
+  .btn-danger {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-200 inline-flex items-center justify-center gap-2;
+    @apply bg-red-500 text-white shadow-md;
+    @apply hover:bg-red-600 hover:shadow-lg active:scale-[0.98];
+    @apply active:bg-red-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400;
+  }
+  
+  .btn-sm {
+    @apply px-4 py-1.5 text-sm;
+  }
+  
+  .btn-lg {
+    @apply px-8 py-3.5 text-lg;
+  }
+  
+  .btn-icon {
+    @apply p-2.5 rounded-full;
+  }
+  
+  .btn:disabled,
+  .btn-primary:disabled,
+  .btn-secondary:disabled,
+  .btn-accent:disabled,
+  .btn-danger:disabled {
+    @apply opacity-50 cursor-not-allowed scale-100 shadow-none;
+  }
+  
+  .input {
+    @apply w-full px-4 py-2 border border-sand-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent transition-all;
+  }
+  
+  .label {
+    @apply block text-sm font-medium text-charcoal-500 mb-1;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-sand-200 p-6;
+  }
+  
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .badge-green {
+    @apply bg-forest-100 text-forest-700;
+  }
+  
+  .badge-yellow {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .badge-red {
+    @apply bg-terracotta-100 text-terracotta-700;
+  }
+  
+  .badge-gray {
+    @apply bg-charcoal-100 text-charcoal-600;
+  }
+}

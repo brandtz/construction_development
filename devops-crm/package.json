@@ -1,0 +1,43 @@
+{
+  "name": "devops-crm",
+  "version": "1.0.0",
+  "description": "Developer Operations CRM for Lane County Housing Development",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run portal\"",
+    "server": "nodemon server/index.js",
+    "client": "npm run dev --prefix client",
+    "portal": "npm run dev --prefix ../investor-portal",
+    "start": "node server/index.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:seed": "node prisma/seed.js",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset --force && node prisma/seed.js"
+  },
+  "keywords": [
+    "crm",
+    "construction",
+    "real-estate"
+  ],
+  "author": "Lane County Housing Development",
+  "license": "MIT",
+  "type": "commonjs",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.2",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.11",
+    "prisma": "^6.19.2"
+  }
+}
